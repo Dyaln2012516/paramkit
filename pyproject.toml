@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paramkit"
+version = "0.1.0"
+authors = [
+  { name = "Dylan", email = "cgq2012516@gmail.com" },
+]
+description = "A parameter management toolkit for Python"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+keywords = ["parameters", "configuration", "management"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "typing-extensions >=4.0.0; python_version < '3.8'",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0", "pytest-cov"]
+dev = ["black", "flake8", "mypy"]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/paramkit"
+Documentation = "https://github.com/yourusername/paramkit/blob/main/README.md"
+Repository = "https://github.com/yourusername/paramkit"
+Issues = "https://github.com/yourusername/paramkit/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"paramkit" = ["py.typed", "*.json"]
+
+# 如果包含命令行工具
+[project.scripts]
+paramkit-cli = "paramkit.cli:main"
