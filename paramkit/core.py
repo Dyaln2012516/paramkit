@@ -8,7 +8,9 @@
 @Contact Email: cgq2012516@gmail.com
 """
 from functools import wraps
+from typing import Callable
 
+from paramkit.cli import CliCommand
 from paramkit.errors import ParamRepeatDefinedError
 from paramkit.utils import web_params, flatten_params
 from src.paramkit.fields import P
@@ -49,6 +51,8 @@ class ApiAssert:
 
             if self.attach:
                 request.dataa = dataa
+            if self.enable_docs:
+                self.__generate_docs__(view_func)
 
             rep = view_func(view_self, request, *view_args, **view_kwargs)
             return rep
@@ -78,76 +82,26 @@ class ApiAssert:
             p.validate()
         return ''
 
+    def __generate_docs__(self, view_func):
+        """生成API文档（示例）"""
+        docs = ["Validated Parameters:"]
+        for name, rule in self._defineparams.items():
+            constraints = []
+            if 'ge' in rule.constraints:
+                constraints.append(f"min={rule.constraints['ge']}")
+            if 'le' in rule.constraints:
+                constraints.append(f"max={rule.constraints['le']}")
+            if 'opts' in rule.constraints:
+                constraints.append(f"options={rule.constraints['opts']}")
+
+            docs.append(f"- {name} ({rule.type.__name__}): {', '.join(constraints)}")
+
+        view_func.__doc__ = '\n'.join(docs)
+
+    def cli_command(self, func: Callable) -> Callable:
+        """添加 CLI 命令支持"""
+        cli_handler = CliCommand(self)
+        return cli_handler(func)
+
 
 apiassert = ApiAssert
-
-
-class Request:
-    """
-    Mock request class for testing purposes.
-    """
-
-    def __init__(self):
-        self.name = "cgq"
-        self.age = 18
-        self.addr = {
-            'road': 'Traffic Street',
-            'district': 'Caiyuanba',
-            'home': 'qt',
-            'school': {
-                'teacher': 'ydy',
-                'class': 1,
-                'subject': 'math',
-                'score': 100
-            }
-        }
-        self.hobbies = [
-            'shooting',
-            'fishing',
-            'swimming',
-            'running',
-            'dancing',
-            'sleeping',
-            'eating',
-            'coding',
-            'playing',
-            'watching',
-            'reading',
-            'writing',
-            'singing',
-        ]
-        self.method = 'GET'
-
-    @property
-    def GET(self):
-        return self
-
-    def dict(self):
-        return self.__dict__
-
-
-class DemoView:
-    """
-    Demo view class to demonstrate parameter validation.
-    """
-
-    @apiassert(
-        P('name', typ=str, gt=2, le=3, opts=('cgq', 'b'), must=False),
-        P('age', typ=int, ge=2, le=100),
-        P('addr', typ=dict, le=10, ge=2),
-        P('hobbies', typ=list, ge=1, le=16),
-        P('addr.school.teacher', typ=str, ge=2, le=6, opts=('xz', 'ydy')),
-    )
-    def view_func(self, request):
-        """
-        Example view function to demonstrate parameter validation.
-
-        :param request: The request object
-        """
-        print(request)
-
-
-if __name__ == "__main__":
-    # demo = DemoView()
-    # demo.view_func(Request())
-    print('4.3'.isdecimal())

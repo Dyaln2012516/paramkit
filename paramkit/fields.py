@@ -26,7 +26,7 @@ class P:
         "desc",
         "value",
         "url",
-        "__weakref__",
+        "default",
     )
 
     def __init__(self,
@@ -41,6 +41,7 @@ class P:
                  le: Optional[Union[int, float]] = None,
                  ge: Optional[Union[int, float]] = None,
                  desc: Optional[str] = None,
+                 default: Any = None,
                  ):
         """
         Initialize a parameter with the given constraints.
@@ -67,6 +68,7 @@ class P:
 
         self.value = None
         self.url = None
+        self.default = None
 
         self.__check_bounds__()
 

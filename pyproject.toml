@@ -40,7 +40,7 @@ Repository = "https://github.com/yourusername/paramkit"
 Issues = "https://github.com/yourusername/paramkit/issues"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
 
 [tool.setuptools.package-data]
 "paramkit" = ["py.typed", "*.json"]
