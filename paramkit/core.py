@@ -8,19 +8,19 @@
 @Contact Email: cgq2012516@gmail.com
 """
 from functools import wraps
-from typing import Callable
+from typing import Callable, Dict, Optional, Tuple
 
-from paramkit.cli import CliCommand
 from paramkit.errors import ParamRepeatDefinedError
-from paramkit.utils import web_params, flatten_params
-from src.paramkit.fields import P
+from paramkit.fields import P
+from paramkit.utils import flatten_params, web_params
 
 
 class ApiAssert:
     """
     A decorator class for API parameter validation.
     """
-    __slots__ = ('_defineparams', 'enable_docs', 'attach')
+
+    __slots__ = ("defineparams", "enable_docs", "attach")
 
     def __init__(self, *params: P, enable_docs: bool = False, attach: bool = False):
         """
@@ -30,7 +30,7 @@ class ApiAssert:
         :param enable_docs: Flag to enable documentation
         :param attach: Flag to attach validated data to the request
         """
-        self._defineparams = dict()
+        self.defineparams: Dict[str, P] = {}
         self.__setup__(params)
         self.enable_docs = enable_docs
         self.attach = attach
@@ -46,7 +46,7 @@ class ApiAssert:
         @wraps(view_func)
         def _decorate(view_self, request, *view_args, **view_kwargs):
             # Flatten and validate parameters
-            flatten_params(web_params(request, view_kwargs), self._defineparams)
+            flatten_params(web_params(request, view_kwargs), self.defineparams)
             dataa = self.__validate__()
 
             if self.attach:
@@ -59,7 +59,7 @@ class ApiAssert:
 
         return _decorate
 
-    def __setup__(self, ps):
+    def __setup__(self, ps: Tuple[P, ...]):
         """
         Setup the parameter definitions and check for duplicates.
 
@@ -68,40 +68,40 @@ class ApiAssert:
         """
         for p in ps:
             param_name = p.name
-            if param_name in self._defineparams:
+            if param_name in self.defineparams:
                 raise ParamRepeatDefinedError(param_name)
-            self._defineparams[param_name] = p
+            self.defineparams[param_name] = p
 
-    def __validate__(self):
+    def __validate__(self) -> Optional[str]:
         """
         Validate all defined parameters.
 
         :return: Empty string after validation
         """
-        for p in self._defineparams.values():
+        for p in self.defineparams.values():
             p.validate()
-        return ''
+        return ""
 
-    def __generate_docs__(self, view_func):
-        """生成API文档（示例）"""
+    def __generate_docs__(self, view_func: Callable[..., None]) -> Optional[None]:
+        """Generate API documentation (example)"""
         docs = ["Validated Parameters:"]
-        for name, rule in self._defineparams.items():
+        for name, param in self.defineparams.items():
             constraints = []
-            if 'ge' in rule.constraints:
-                constraints.append(f"min={rule.constraints['ge']}")
-            if 'le' in rule.constraints:
-                constraints.append(f"max={rule.constraints['le']}")
-            if 'opts' in rule.constraints:
-                constraints.append(f"options={rule.constraints['opts']}")
+            if "ge" in param:
+                constraints.append(f"min={param.ge}")
+            if "le" in param:
+                constraints.append(f"max={param.le}")
+            if "opts" in param:
+                constraints.append(f"options={param.opts}")
 
-            docs.append(f"- {name} ({rule.type.__name__}): {', '.join(constraints)}")
+            docs.append(f"- {name} ({param.typ.__name__}): {', '.join(constraints)}")
 
-        view_func.__doc__ = '\n'.join(docs)
+        view_func.__doc__ = "\n".join(docs)
 
-    def cli_command(self, func: Callable) -> Callable:
-        """添加 CLI 命令支持"""
-        cli_handler = CliCommand(self)
-        return cli_handler(func)
+    # def cli_command(self, func: Callable[..., None]) -> Callable[..., Any]:
+    #     """Add CLI command support"""
+    #     cli_handler = CliCommand(self)
+    #     return cli_handler(func)
 
 
-apiassert = ApiAssert
+apiassert = ApiAssert  # noqa: C0103

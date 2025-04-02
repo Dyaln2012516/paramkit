@@ -8,14 +8,15 @@
 @Contact Email: cgq2012516@gmail.com
 """
 import json
-from typing import Any, Dict
-from django.http import HttpRequest
+from typing import Any, Dict, Optional, Union
 
+from django.http import HttpRequest
 from rest_framework.request import Request
+
 from paramkit.fields import P
 
 
-def web_params(request: HttpRequest, view_kwargs: Dict[str, Any] = None) -> Dict:
+def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Retrieve all request parameters in a unified manner.
     Supports: query parameters, form data, JSON body, URL path parameters, file uploads.
@@ -49,7 +50,10 @@ def web_params(request: HttpRequest, view_kwargs: Dict[str, Any] = None) -> Dict
                     params.update(json.loads(request.body))
                 except json.JSONDecodeError:
                     pass
-            elif content_type in ["application/x-www-form-urlencoded", "multipart/form-data"]:
+            elif content_type in [
+                "application/x-www-form-urlencoded",
+                "multipart/form-data",
+            ]:
                 params.update(request.POST.dict())
                 # Handle file uploads
                 params.update({name: request.FILES.getlist(name) for name in request.FILES})
@@ -69,11 +73,11 @@ def flatten_params(webparams: Dict[str, Any], defineparams: Dict[str, P]) -> Non
     :param defineparams: Dictionary of defined parameters
     """
 
-    def _setvalue(name, value):
+    def _setvalue(name: str, value: Union[int, float, dict[str, Any], list[Any], str, bool]):
         if param := defineparams.get(name):
             param.value = value
 
-    def _flatten(obj, prefix=''):
+    def _flatten(obj: Any, prefix: str = ""):
         for key, value in obj.items():
             full_key = f"{prefix}.{key}" if prefix else key
             if isinstance(value, dict):

@@ -1,0 +1,47 @@
+repos:
+  - repo: local
+    hooks:
+      # 第一阶段：代码清理
+      - id: pycln
+        name: "Pycln - 清理未使用导入"
+        entry: pycln -a
+        language: python
+        types: [python]
+
+      # 第二阶段：导入处理
+      - id: isort
+        name: "isort - 导入排序"
+        entry: isort
+        language: python
+        types: [python]
+
+      # 第三阶段：代码格式化
+      - id: black
+        name: "Black - 代码格式化"
+        entry: black
+        language: python
+        types: [python]
+
+      # 第四阶段：静态检查
+      - id: flake8
+        name: "Flake8 - 基础检查"
+        entry: flake8
+        language: python
+        types: [python]
+
+      # 第五阶段：深度分析
+      - id: pylint
+        name: "Pylint - 代码质量"
+        entry: pylint
+        language: python
+        types: [python]
+        args:
+          - "--rcfile=pyproject.toml"
+          - "--jobs=0"
+
+      # 第六阶段：类型检查
+      - id: mypy
+        name: "Mypy - 静态类型"
+        entry: mypy
+        language: python
+        types: [python]

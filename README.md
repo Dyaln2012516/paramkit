@@ -6,7 +6,6 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/paramkit)](https://pypi.org/project/paramkit/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/yourusername/paramkit/blob/main/LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-readthedocs.io-brightgreen)](https://paramkit.readthedocs.io)
-[![Build Status](https://github.com/yourusername/paramkit/actions/workflows/tests.yml/badge.svg)](https://github.com/yourusername/paramkit/actions)
 
 </div>
 

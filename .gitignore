@@ -172,3 +172,5 @@ secrets.ini
 # 临时文件
 temp/
 tmp/
+
+.pre-commit-config.yaml

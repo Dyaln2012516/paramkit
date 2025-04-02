@@ -5,39 +5,33 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "paramkit"
 version = "0.1.0"
-authors = [
-  { name = "Dylan", email = "cgq2012516@gmail.com" },
-]
+authors = [{ name = "Dylan", email = "cgq2012516@gmail.com" }]
 description = "A parameter management toolkit for Python"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 keywords = ["parameters", "configuration", "management"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13",
-]
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12"]
 dependencies = [
-  "typing-extensions >=4.0.0; python_version < '3.8'",
-]
+    "typing-extensions >=4.0.0; python_version < '3.8'"]
 
 [project.optional-dependencies]
 test = ["pytest>=7.0", "pytest-cov"]
-dev = ["black", "flake8", "mypy"]
+dev = ["black", "flake8", "mypy", "isort", "pylint", "pycln"]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/paramkit"
-Documentation = "https://github.com/yourusername/paramkit/blob/main/README.md"
-Repository = "https://github.com/yourusername/paramkit"
-Issues = "https://github.com/yourusername/paramkit/issues"
+Homepage = "https://github.com/Dyaln2012516/paramkit"
+Documentation = "https://github.com/Dyaln2012516/paramkit/blob/main/README.md"
+Issues = "https://github.com/Dyaln2012516/paramkit/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -45,6 +39,115 @@ where = ["."]
 [tool.setuptools.package-data]
 "paramkit" = ["py.typed", "*.json"]
 
-# 如果包含命令行工具
 [project.scripts]
 paramkit-cli = "paramkit.cli:main"
+
+# ========== 代码质量工具 ==========
+
+[tool.black]
+line-length = 108
+target-version = ["py310"]
+skip-string-normalization = true
+
+[tool.isort]
+profile = "black"
+line_length = 108
+known_third_party = ["pytest", "django", "requests"]
+multi_line_output = 3
+include_trailing_comma = true
+combine_as_imports = true
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.flake8]
+max-line-length = 108
+extend-ignore = [
+    "E203", # 空格相关规则冲突
+    "W503", # 运算符位置
+    "E501", # 行长度（由black处理）
+    # 未使用导入（由pycln处理）
+    "F401"]
+max-complexity = 12  # 提高圈复杂度阈值
+per-file-ignores = [
+    "__init__.py:F401",
+    # 允许测试用例的assert
+    "tests/*:S101"]
+exclude = [
+    ".git",
+    ".venv",
+    "build",
+    "dist",
+    "migrations"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+check_untyped_defs = true
+disallow_any_generics = true
+warn_unused_configs = true
+show_error_codes = true
+ignore_missing_imports = true
+disable_error_code = ["no-untyped-def"]
+exclude = ["tests/.*", "migrations/.*"]
+
+[[tool.mypy.overrides]]
+module = ["django.*", "sqlalchemy.*"]
+ignore_errors = true
+
+[tool.pylint]
+max-line-length = 108
+max-args = 16
+max-locals = 16
+max-attributes = 16
+good-names = ["id", "url", "db", "api", "pk", "uid", "tmp", "obj", "args", "kwargs"]
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "missing-docstring",
+    "too-few-public-methods",
+    "import-error",
+    "no-member",
+    "invalid-name",
+    "fixme",
+    "implicit-str-concat",
+    "unused-argument"]
+
+[tool.pylint.DESIGN]
+max-parents = 6
+min-public-methods = 1
+
+[tool.pylint.FORMAT]
+max-module-lines = 1200
+
+[tool.pycln]
+all = true
+skip-imports = ["__init__"]
+exclude = ["migrations/*", "legacy/*"]
+
+[tool.coverage.run]
+branch = true
+source = ["paramkit"]
+omit = ["tests/*", "migrations/*", "**/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 85
+
+[tool.pytest.ini_options]
+addopts = "--cov=paramkit --cov-report=term-missing --cov-fail-under=85"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning"]
+
+# ========== pre-commit 配置 ==========
+
+[tool.pre_commit]
+repos = [
+    { repo = "local", hooks = [
+        { id = "pycln", name = "Pycln - 清理未使用导入", entry = "pycln -a", language = "python", types = ["python"] },
+        { id = "isort", name = "isort - 导入排序", entry = "isort", language = "python", types = ["python"] },
+        { id = "black", name = "Black - 代码格式化", entry = "black", language = "python", types = ["python"] },
+        { id = "flake8", name = "Flake8 - 基础检查", entry = "flake8", language = "python", types = ["python"] },
+        { id = "pylint", name = "Pylint - 代码质量", entry = "pylint", language = "python", types = ["python"], args = ["--rcfile=pyproject.toml", "--jobs=0"] },
+        { id = "mypy", name = "Mypy - 静态类型", entry = "mypy", language = "python", types = ["python"] }
+    ] }]
