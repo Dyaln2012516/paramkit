@@ -1,37 +1,37 @@
 repos:
   - repo: local
     hooks:
-      # 第一阶段：代码清理
+      # Phase 1: Code Cleanup
       - id: pycln
-        name: "Pycln - 清理未使用导入"
+        name: "Pycln - Clean Unused Imports"
         entry: pycln -a
         language: python
         types: [python]
 
-      # 第二阶段：导入处理
+      # Phase 2: Import Handling
       - id: isort
-        name: "isort - 导入排序"
+        name: "isort - Sort Imports"
         entry: isort
         language: python
         types: [python]
 
-      # 第三阶段：代码格式化
+      # Phase 3: Code Formatting
       - id: black
-        name: "Black - 代码格式化"
+        name: "Black - Code Formatting"
         entry: black
         language: python
         types: [python]
 
-      # 第四阶段：静态检查
+      # Phase 4: Static Checks
       - id: flake8
-        name: "Flake8 - 基础检查"
+        name: "Flake8 - Basic Checks"
         entry: flake8
         language: python
         types: [python]
 
-      # 第五阶段：深度分析
+      # Phase 5: Deep Analysis
       - id: pylint
-        name: "Pylint - 代码质量"
+        name: "Pylint - Code Quality"
         entry: pylint
         language: python
         types: [python]
@@ -39,9 +39,9 @@ repos:
           - "--rcfile=pyproject.toml"
           - "--jobs=0"
 
-      # 第六阶段：类型检查
+      # Phase 6: Type Checking
       - id: mypy
-        name: "Mypy - 静态类型"
+        name: "Mypy - Static Types"
         entry: mypy
         language: python
         types: [python]

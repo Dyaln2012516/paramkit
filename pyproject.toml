@@ -42,7 +42,7 @@ where = ["."]
 [project.scripts]
 paramkit-cli = "paramkit.cli:main"
 
-# ========== 代码质量工具 ==========
+# ========== Code Quality Tools ==========
 
 [tool.black]
 line-length = 108
@@ -61,15 +61,15 @@ sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 [tool.flake8]
 max-line-length = 108
 extend-ignore = [
-    "E203", # 空格相关规则冲突
-    "W503", # 运算符位置
-    "E501", # 行长度（由black处理）
-    # 未使用导入（由pycln处理）
+    "E203", # Space related rule conflict
+    "W503", # Operator position
+    "E501", # Line length (handled by black)
+    # Unused imports (handled by pycln)
     "F401"]
-max-complexity = 12  # 提高圈复杂度阈值
+max-complexity = 12  # Increase cyclomatic complexity threshold
 per-file-ignores = [
     "__init__.py:F401",
-    # 允许测试用例的assert
+    # Allow assert in test cases
     "tests/*:S101"]
 exclude = [
     ".git",
@@ -139,15 +139,15 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning"]
 
-# ========== pre-commit 配置 ==========
+# ========== pre-commit Configuration ==========
 
 [tool.pre_commit]
 repos = [
     { repo = "local", hooks = [
-        { id = "pycln", name = "Pycln - 清理未使用导入", entry = "pycln -a", language = "python", types = ["python"] },
-        { id = "isort", name = "isort - 导入排序", entry = "isort", language = "python", types = ["python"] },
-        { id = "black", name = "Black - 代码格式化", entry = "black", language = "python", types = ["python"] },
-        { id = "flake8", name = "Flake8 - 基础检查", entry = "flake8", language = "python", types = ["python"] },
-        { id = "pylint", name = "Pylint - 代码质量", entry = "pylint", language = "python", types = ["python"], args = ["--rcfile=pyproject.toml", "--jobs=0"] },
-        { id = "mypy", name = "Mypy - 静态类型", entry = "mypy", language = "python", types = ["python"] }
+        { id = "pycln", name = "Pycln - Clean Unused Imports", entry = "pycln -a", language = "python", types = ["python"] },
+        { id = "isort", name = "isort - Sort Imports", entry = "isort", language = "python", types = ["python"] },
+        { id = "black", name = "Black - Code Formatting", entry = "black", language = "python", types = ["python"] },
+        { id = "flake8", name = "Flake8 - Basic Checks", entry = "flake8", language = "python", types = ["python"] },
+        { id = "pylint", name = "Pylint - Code Quality", entry = "pylint", language = "python", types = ["python"], args = ["--rcfile=pyproject.toml", "--jobs=0"] },
+        { id = "mypy", name = "Mypy - Static Types", entry = "mypy", language = "python", types = ["python"] }
     ] }]
