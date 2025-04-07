@@ -6,35 +6,35 @@ repos:
         name: "Pycln - Clean Unused Imports"
         entry: pycln -a
         language: python
-        types: [python]
+        types: [ python ]
 
       # Phase 2: Import Handling
       - id: isort
         name: "isort - Sort Imports"
         entry: isort
         language: python
-        types: [python]
+        types: [ python ]
 
       # Phase 3: Code Formatting
       - id: black
         name: "Black - Code Formatting"
         entry: black
         language: python
-        types: [python]
+        types: [ python ]
 
       # Phase 4: Static Checks
       - id: flake8
         name: "Flake8 - Basic Checks"
         entry: flake8
         language: python
-        types: [python]
+        types: [ python ]
 
       # Phase 5: Deep Analysis
       - id: pylint
         name: "Pylint - Code Quality"
         entry: pylint
         language: python
-        types: [python]
+        types: [ python ]
         args:
           - "--rcfile=pyproject.toml"
           - "--jobs=0"
@@ -44,4 +44,4 @@ repos:
         name: "Mypy - Static Types"
         entry: mypy
         language: python
-        types: [python]
+        types: [ python ]

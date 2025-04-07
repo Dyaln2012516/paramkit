@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional, Union
 from django.http import HttpRequest
 from rest_framework.request import Request
 
-from paramkit.fields import P
+from paramkit.api.fields import P
 
 
 def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -65,16 +65,16 @@ def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = Non
     return params
 
 
-def flatten_params(webparams: Dict[str, Any], defineparams: Dict[str, P]) -> None:
+def flatten_params(webparams: Dict[str, Any], defined_params: Dict[str, P]) -> None:
     """
     Flatten nested parameters and set values in the defined parameters.
 
     :param webparams: Dictionary of web parameters
-    :param defineparams: Dictionary of defined parameters
+    :param defined_params: Dictionary of defined parameters
     """
 
     def _setvalue(name: str, value: Union[int, float, dict[str, Any], list[Any], str, bool]):
-        if param := defineparams.get(name):
+        if param := defined_params.get(name):
             param.value = value
 
     def _flatten(obj: Any, prefix: str = ""):

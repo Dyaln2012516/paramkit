@@ -10,9 +10,7 @@
 import re
 
 # IPv4 address (strict mode, excluding leading zeros)
-IPV4_PATTERN = re.compile(
-    r"^((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}" r"(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)$"
-)
+IPV4_PATTERN = re.compile(r"^((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}" r"(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)$")
 
 # IPv6 address pattern
 IPV6_PATTERN = re.compile(
@@ -59,9 +57,7 @@ PHONE_PATTERN = re.compile(
 )
 
 # Bank card number (mainstream domestic bank formats)
-BANK_CARD_PATTERN = re.compile(
-    r"^([1-9]{1})(\d{15}|\d{18})$" r"|^(62\d{17})$"
-)  # 16 or 19 digits  # UnionPay card
+BANK_CARD_PATTERN = re.compile(r"^([1-9]{1})(\d{15}|\d{18})$" r"|^(62\d{17})$")  # 16 or 19 digits  # UnionPay card
 
 # Email address (RFC5322 standard)
 EMAIL_PATTERN = re.compile(

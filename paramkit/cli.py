@@ -11,7 +11,7 @@ import argparse
 from functools import wraps
 from typing import Any, Callable, Optional
 
-from paramkit.fields import P
+from paramkit.api.fields import P
 
 
 class CliCommand:
@@ -58,7 +58,7 @@ class CliCommand:
 
     def _build_parser(self) -> Optional[None]:
         """Build the complete argument parser"""
-        for param in self.api_assert.defineparams.values():
+        for param in self.api_assert.defined_params.values():
             self._build_argument(param)
 
     def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:

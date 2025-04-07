@@ -9,12 +9,7 @@
 import re
 from typing import Any, List, Optional, Set, Tuple, Union
 
-from paramkit.errors import (
-    ParamLengthExceedLimitError,
-    ParamMissingError,
-    ParamTypeError,
-    ParamValueInvalidError,
-)
+from paramkit.errors import ParamLengthExceedLimitError, ParamMissingError, ParamTypeError, ParamValueInvalidError
 
 
 class P:
@@ -41,7 +36,7 @@ class P:
         *,
         required: bool = True,
         typ: Any = None,
-        opts: Optional[Union[re.Pattern[str], str, List[Any], Tuple[Any], Set[Any]]] = None,
+        opts: Optional[Union[re.Pattern[str], str, List[Any], Tuple[Any, ...], Set[Any]]] = None,
         lt: Optional[Union[int, float]] = None,
         gt: Optional[Union[int, float]] = None,
         le: Optional[Union[int, float]] = None,
@@ -138,9 +133,7 @@ class P:
             or (isinstance(self.opts, str) and re.fullmatch(self.opts, str(self.value)))
             or (isinstance(self.opts, (list, tuple)) and self.value in self.opts)
         ):
-            raise ParamValueInvalidError(
-                f"param `{self.name}` value is invalid, current: {self.value}, expected: {self.opts}"
-            )
+            raise ParamValueInvalidError(f"param `{self.name}` value is invalid, current: {self.value}, expected: {self.opts}")
 
     def __validate_limit__(self) -> Optional[None]:
         """Validate the parameter value against range constraints."""
@@ -151,9 +144,7 @@ class P:
             and (self.le is None or value <= self.le)
             and (self.lt is None or value < self.lt)
         ):
-            raise ParamLengthExceedLimitError(
-                f"param `{self.name}` length is out of limitation, current length: {value}"
-            )
+            raise ParamLengthExceedLimitError(f"param `{self.name}` length is out of limitation, current length: {value}")
 
     def validate(self) -> Optional[None]:
         """Validate the parameter value against all constraints."""

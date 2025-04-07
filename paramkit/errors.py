@@ -22,11 +22,11 @@ class ParamMissingError(ParamError):
 
 
 class ParamTypeError(ParamError):
-    """param missing"""
+    """param type error"""
 
 
 class ParamLengthExceedLimitError(ParamError):
-    """param missing"""
+    """param length exceed limit"""
 
 
 class ParamValueInvalidError(ParamError):

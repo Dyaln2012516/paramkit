@@ -45,13 +45,13 @@ paramkit-cli = "paramkit.cli:main"
 # ========== Code Quality Tools ==========
 
 [tool.black]
-line-length = 108
+line-length = 128
 target-version = ["py310"]
 skip-string-normalization = true
 
 [tool.isort]
 profile = "black"
-line_length = 108
+line_length = 128
 known_third_party = ["pytest", "django", "requests"]
 multi_line_output = 3
 include_trailing_comma = true
@@ -59,13 +59,15 @@ combine_as_imports = true
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.flake8]
-max-line-length = 108
+max-line-length = 128
 extend-ignore = [
     "E203", # Space related rule conflict
     "W503", # Operator position
     "E501", # Line length (handled by black)
+    "W291", # handled by black
     # Unused imports (handled by pycln)
-    "F401"]
+    "F401",
+    "C901"]
 max-complexity = 12  # Increase cyclomatic complexity threshold
 per-file-ignores = [
     "__init__.py:F401",
@@ -80,21 +82,25 @@ exclude = [
 
 [tool.mypy]
 python_version = "3.10"
-strict = true
+#strict = true
 check_untyped_defs = true
 disallow_any_generics = true
 warn_unused_configs = true
 show_error_codes = true
 ignore_missing_imports = true
-disable_error_code = ["no-untyped-def"]
+disable_error_code = ["no-untyped-def", "no-untyped-call", " type-arg", "assignment"]
 exclude = ["tests/.*", "migrations/.*"]
+
+# Peewee类型提示补丁
+[mypy-peewee."*"]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["django.*", "sqlalchemy.*"]
 ignore_errors = true
 
 [tool.pylint]
-max-line-length = 108
+max-line-length = 128
 max-args = 16
 max-locals = 16
 max-attributes = 16

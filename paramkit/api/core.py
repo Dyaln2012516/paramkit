@@ -10,8 +10,8 @@
 from functools import wraps
 from typing import Callable, Dict, Optional, Tuple
 
+from paramkit.api.fields import P
 from paramkit.errors import ParamRepeatDefinedError
-from paramkit.fields import P
 from paramkit.utils import flatten_params, web_params
 
 
@@ -20,9 +20,9 @@ class ApiAssert:
     A decorator class for API parameter validation.
     """
 
-    __slots__ = ("defineparams", "enable_docs", "attach")
+    __slots__ = ("defined_params", "enable_docs")
 
-    def __init__(self, *params: P, enable_docs: bool = False, attach: bool = False):
+    def __init__(self, *params: P, enable_docs: bool = False):
         """
         Initialize the ApiAssert decorator.
 
@@ -30,10 +30,9 @@ class ApiAssert:
         :param enable_docs: Flag to enable documentation
         :param attach: Flag to attach validated data to the request
         """
-        self.defineparams: Dict[str, P] = {}
+        self.defined_params: Dict[str, P] = {}
         self.__setup__(params)
         self.enable_docs = enable_docs
-        self.attach = attach
 
     def __call__(self, view_func):
         """
@@ -46,11 +45,9 @@ class ApiAssert:
         @wraps(view_func)
         def _decorate(view_self, request, *view_args, **view_kwargs):
             # Flatten and validate parameters
-            flatten_params(web_params(request, view_kwargs), self.defineparams)
-            dataa = self.__validate__()
+            flatten_params(web_params(request, view_kwargs), self.defined_params)
+            self.__validate__()
 
-            if self.attach:
-                request.dataa = dataa
             if self.enable_docs:
                 self.__generate_docs__(view_func)
 
@@ -68,24 +65,23 @@ class ApiAssert:
         """
         for p in ps:
             param_name = p.name
-            if param_name in self.defineparams:
+            if param_name in self.defined_params:
                 raise ParamRepeatDefinedError(param_name)
-            self.defineparams[param_name] = p
+            self.defined_params[param_name] = p
 
-    def __validate__(self) -> Optional[str]:
+    def __validate__(self) -> None:
         """
         Validate all defined parameters.
 
         :return: Empty string after validation
         """
-        for p in self.defineparams.values():
+        for p in self.defined_params.values():
             p.validate()
-        return ""
 
     def __generate_docs__(self, view_func: Callable[..., None]) -> Optional[None]:
         """Generate API documentation (example)"""
         docs = ["Validated Parameters:"]
-        for name, param in self.defineparams.items():
+        for name, param in self.defined_params.items():
             constraints = []
             if "ge" in param:
                 constraints.append(f"min={param.ge}")
