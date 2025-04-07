@@ -2,24 +2,22 @@
 # _*_ coding:utf-8 _*_
 """
 @File     : __init__.py.py
-@Project  : 
+@Project  :
 @Time     : 2025/4/6 21:10
 @Author   : dylan
 @Contact Email: cgq2012516@163.com
 """
-from typing import Type, TypeVar
-
 from peewee import Model
 from playhouse.pool import PooledSqliteDatabase
 
 db = PooledSqliteDatabase(
     'data/api.db',
-    max_connections=20,  # 最大连接数
-    stale_timeout=300,  # 闲置连接超时（秒）
+    max_connections=20,  # Maximum connections
+    stale_timeout=300,  # Idle connection timeout (seconds)
     check_same_thread=False,
     pragmas={
         'journal_mode': 'wal',
-        'cache_size': -10240,  # 10MB缓存
+        'cache_size': -1024 * 10,  # 10MB cache
         'foreign_keys': 1,
     },
 )
@@ -31,10 +29,9 @@ class BaseModel(Model):  # type: ignore
 
 
 def init_db(*tables):
-    # 安全创建表（仅当表不存在时）
+    # Safely create tables (only if they do not exist)
     db.create_tables(*tables, safe=True)
 
-    # 初始化后立即执行优化
-    with db:
-        db.execute('PRAGMA optimize;')
-        db.execute('ANALYZE;')
+    with db.connection():
+        db.execute_sql('PRAGMA optimize;')
+        db.execute_sql('ANALYZE;')
