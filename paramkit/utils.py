@@ -54,7 +54,7 @@ def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = Non
                 "application/x-www-form-urlencoded",
                 "multipart/form-data",
             ]:
-                params.update(request.POST.dict())
+                params.update({key: values if len(values) > 1 else values[0] for key, values in request.POST.lists()})
                 # Handle file uploads
                 params.update({name: request.FILES.getlist(name) for name in request.FILES})
 

@@ -116,7 +116,8 @@ class P:
             return
 
         if not isinstance(self.value, self.typ):
-            if isinstance(self.typ, (float, int)) and str(self.value).replace(".", "", 1).isdigit():
+            if self.typ in (float, int) and str(self.value).replace(".", "", 1).isdigit():
+                self.value = self.typ(self.value)
                 return
             raise ParamTypeError(f"Expected type {self.typ.__name__} but got {type(self.value).__name__}")
 
@@ -144,7 +145,7 @@ class P:
             and (self.le is None or value <= self.le)
             and (self.lt is None or value < self.lt)
         ):
-            raise ParamLengthExceedLimitError(f"param `{self.name}` length is out of limitation, current length: {value}")
+            raise ParamLengthExceedLimitError(f"param `{self.name}` is out of limitation, current: {value}")
 
     def validate(self) -> Optional[None]:
         """Validate the parameter value against all constraints."""
