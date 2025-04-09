@@ -39,24 +39,23 @@ def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = Non
     # Handle request body parameters
     if request.method in ["POST", "PUT", "PATCH", "DELETE"]:
         content_type = request.content_type
-
-        # DRF has already parsed the data into request.data
-        if isinstance(request, Request):
-            params.update(request.data)
-        else:
-            # Native Django handling logic
-            if content_type == "application/json":
+        # Native Django handling logic
+        if content_type == "application/json":
+            # DRF has already parsed the data into request.data
+            if isinstance(request, Request):
+                params.update(request.data)
+            else:
                 try:
                     params.update(json.loads(request.body))
                 except json.JSONDecodeError:
                     pass
-            elif content_type in [
-                "application/x-www-form-urlencoded",
-                "multipart/form-data",
-            ]:
-                params.update({key: values if len(values) > 1 else values[0] for key, values in request.POST.lists()})
-                # Handle file uploads
-                params.update({name: request.FILES.getlist(name) for name in request.FILES})
+        elif content_type in (
+            "application/x-www-form-urlencoded",
+            "multipart/form-data",
+        ):
+            params.update({key: values if len(values) > 1 else values[0] for key, values in request.POST.lists()})
+            # Handle file uploads
+            params.update({name: request.FILES.getlist(name) for name in request.FILES})
 
     # Merge path parameters
     if view_kwargs:

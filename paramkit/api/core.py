@@ -7,10 +7,12 @@
 @Author   : dylan
 @Contact Email: cgq2012516@gmail.com
 """
+import time
 from functools import wraps
 from typing import Callable, Dict, Optional, Tuple
 
 from paramkit.api.fields import P
+from paramkit.db.core import CollectDocs
 from paramkit.errors import ParamRepeatDefinedError
 from paramkit.utils import flatten_params, web_params
 
@@ -47,11 +49,14 @@ class ApiAssert:
             # Flatten and validate parameters
             flatten_params(web_params(request, view_kwargs), self.defined_params)
             self.__validate__()
-
-            if self.enable_docs:
-                self.__generate_docs__(view_func)
-
+            start = time.perf_counter()
             rep = view_func(view_self, request, *view_args, **view_kwargs)
+            duration = (time.perf_counter() - start) * 1000
+            if self.enable_docs:
+                CollectDocs(
+                    request=request, response=rep, view_func=view_func, params=self.defined_params, duration=duration
+                ).start()
+
             return rep
 
         return _decorate
