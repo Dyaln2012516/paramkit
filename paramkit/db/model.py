@@ -82,7 +82,6 @@ class APIRecord(BaseModel):
 
     # Request data
     request_headers = TextField(help_text="Request headers in JSON format, example: {'Content-Type':'application/json'}")
-
     request_body = TextField(null=True, help_text="Raw request body content, maximum length 10MB")
 
     # Response data
@@ -135,14 +134,14 @@ class APIParamRecord(BaseModel):
 
     # Parameter name
     param_name = CharField(
-        max_length=255,
+        max_length=256,
         index=True,
         help_text="Name of the parameter (e.g., 'username', 'password')",
     )
 
     # Parameter type
     param_type = CharField(
-        max_length=50,
+        max_length=16,
         help_text="Type of the parameter (e.g., 'string', 'integer', 'boolean')",
     )
 
@@ -154,7 +153,7 @@ class APIParamRecord(BaseModel):
 
     # Is the parameter required
     is_required = CharField(
-        max_length=5,
+        max_length=8,
         choices=[('true', 'True'), ('false', 'False')],
         help_text="Indicates whether the parameter is required (true/false)",
     )
@@ -201,7 +200,7 @@ class APIHeaderRecord(BaseModel):
 
     # Header key
     header_key = CharField(
-        max_length=255,
+        max_length=256,
         index=True,
         help_text="The key of the header parameter (e.g., 'Content-Type', 'Authorization')",
     )

@@ -7,89 +7,174 @@
 @Author   : dylan
 @Contact Email: cgq2012516@163.com
 """
-import json
+from abc import abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any, List, Optional, Tuple
 
 from mdutils import MdUtils
 
+from paramkit.db.model import APIHeaderRecord, APIParamRecord, APIRecord
 
-def generate_full_api_docs(api_spec):
-    md = MdUtils(file_name="API_DOC", title=api_spec['title'])
 
-    # === 文档头 ===
-    md.new_header(1, api_spec['title'])
-    md.new_line(f"**版本**: {api_spec['version']}")
-    md.new_line(f"**基础URL**: `{api_spec['base_url']}`")
-    md.new_line(f"**更新日期**: {datetime.now().strftime('%Y-%m-%d')}")
+@dataclass
+class BaseUrl:
+    name: str
+    url: str
 
-    # === 目录 ===
-    md.new_header(2, "目录")
-    md.new_list(
-        [
-            "[认证方式](#认证方式)",
-            "[全局参数](#全局参数)",
-            "[错误代码](#错误代码)",
-            *[f"[{interface['name']}](#{interface['name'].replace(' ', '-')})" for interface in api_spec['interfaces']],
-        ]
+
+class BaseTable:
+    data: List[Any]
+    head: Tuple[str, ...]
+
+    @property
+    @abstractmethod
+    def text(self) -> List[str]:
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @property
+    def rows(self):
+        return len(self.text) // self.columns
+
+    @property
+    def columns(self):
+        return len(self.head)
+
+
+@dataclass
+class Headers(BaseTable):
+    data: List[APIHeaderRecord]
+    head: Tuple[str, ...] = ('参数名', '参数值')
+
+    @property
+    def text(self) -> List[str]:
+        data = list(self.head)
+        for header in self.data:
+            data.extend([header.header_key, header.header_value])
+        return data
+
+
+@dataclass
+class Params(BaseTable):
+    data: List[APIParamRecord]
+    head: Tuple[str, ...] = ('参数名', '类型', '必填', '说明', '示例')
+
+    @property
+    def text(self) -> List[str]:
+        data = list(self.head)
+        for param in self.data:
+            data.extend(
+                [
+                    param.param_name,
+                    param.param_type,
+                    '✅' if param.is_required else '❌',
+                    param.param_desc or '-',
+                    param.param_demo or '-',
+                ]
+            )
+        return data
+
+
+@dataclass
+class ApiData:
+    header: Headers
+    param: Params
+    name: Optional[str] = None
+    update_at: Optional[str] = None
+    path: Optional[str] = None
+    method: Optional[str] = None
+    request: Optional[str] = ''
+    response: Optional[str] = ''
+
+    def __post_init__(self):
+        self.request = self.request or ''
+        self.response = self.response or ''
+
+
+@dataclass
+class MarkdownData:
+    title: str
+    version: str
+    author: str
+    base_url: List[BaseUrl]
+    apis: List[ApiData] = field(default_factory=list)
+
+
+def _data_from_db(request_uid: str) -> MarkdownData:
+    data = MarkdownData(
+        'API文档',
+        'v1.0',
+        author='cgq',
+        base_url=[
+            BaseUrl('开发环境domain', 'https://api.example.com/dev/v1'),
+            BaseUrl('测试环境domain', 'https://api.example.com/stg/v1'),
+            BaseUrl('生产环境domain', 'https://api.example.com/prd/v1'),
+        ],
     )
+    for record in APIRecord.select():
+        api = ApiData(
+            name=record.request_uid,
+            update_at=record.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            path=record.path,
+            method=record.method,
+            header=Headers(APIHeaderRecord.select().where(APIHeaderRecord.request_uid == request_uid)),
+            param=Params(APIParamRecord.select().where(APIParamRecord.request_uid == request_uid)),
+            request=record.request_body,
+            response=record.response_body,
+        )
+        data.apis.append(api)
+    return data
 
+
+def _api_markdown(api: ApiData, md: MdUtils):
     # === 认证 ===
-    md.new_header(2, "认证方式", add_table_of_contents="n")
+    md.new_header(2, "认证方式", add_table_of_contents='n')
     md.new_line("```http\nAuthorization: Bearer {your_token}\n```")
 
-    # === 全局参数 ===
-    md.new_header(2, "全局参数")
-    md.new_line("### 请求头")
-    t_data = ['参数名', '类型', '必填', '说明'] + [
-        item
-        for param in api_spec['global_headers']
-        for item in [param['name'], param['type'], '✅' if param['required'] else '❌', param['desc']]
-    ]
+    # === 目录 ===
+    md.new_header(2, "接口信息")
+    md.new_line(f"**接口地址**：`{api.path}`")
+    md.new_line(f"**请求方法**：`{api.method}`")
+    md.new_line(f"**更新时间**：`{api.update_at}`")
 
-    md.new_table(columns=4, rows=len(t_data) // 4, text=t_data, text_align='left')
+    md.new_header(2, "请求头", add_table_of_contents='n')
+    md.new_table(columns=api.header.columns, rows=api.header.rows, text=api.header.text, text_align='left')
 
-    # === 错误码 ===
-    md.new_header(2, "错误代码")
-    t_data = ['HTTP状态码', '错误码', '说明'] + [
-        item for code in api_spec['error_codes'] for item in [str(code['status']), code['code'], code['message']]
-    ]
+    md.new_header(2, "请求参数", add_table_of_contents='n')
+    md.new_table(columns=api.param.columns, rows=api.param.rows, text=api.param.text, text_align='left')
 
-    md.new_table(columns=3, rows=len(t_data) // 3, text=t_data, text_align='left')
+    # 示例代码
+    md.new_header(2, "请求示例", add_table_of_contents='n')
+    md.insert_code(api.request, 'json')
 
-    # === 接口详情 ===
-    md.new_header(2, "接口详情")
-    for interface in api_spec['interfaces']:
-        # 接口标题
-        md.new_header(3, f"{interface['name']}", add_table_of_contents="n")
-        md.new_line(f"`{interface['method'].upper()} {interface['path']}`  \n")
-        md.new_line(interface['description'])
+    md.new_header(2, "响应示例", add_table_of_contents='n')
+    md.insert_code(api.response, 'json')
 
-        # 请求参数
-        if interface['params']:
-            md.new_header(3, "请求参数")
-            param_rows = ['参数名', '位置', '类型', '必填', '说明']
-            for param in interface['params']:
-                param_rows += [
-                    param['name'],
-                    param['in'],
-                    param.get('type', 'string'),
-                    '✅' if param['required'] else '❌',
-                    param.get('description', ''),
-                ]
-            md.new_table(columns=5, rows=len(param_rows) // 5, text=param_rows, text_align='left')
+    # md.new_header(2, "目录")
+    # md.new_list(
+    #     [
+    #         "[认证方式](#认证方式)",
+    #         "[全局参数](#全局参数)",
+    #         "[错误代码](#错误代码)",
+    #         *[f"[{interface['name']}](#{interface['name'].replace(' ', '-')})" for interface in api_spec['interfaces']],
+    #     ]
+    # )
+    md.new_line('---')
 
-        # 示例代码
-        md.new_header(4, "请求示例")
-        md.insert_code(json.dumps(interface['request_example'], indent=2), 'json')
 
-        md.new_header(4, "成功响应")
-        md.insert_code(json.dumps(interface['response_success'], indent=2), 'json')
+def generate_markdown(request_uid: str):
+    data = _data_from_db(request_uid)
 
-        if interface.get('response_error'):
-            md.new_header(4, "错误响应")
-            md.insert_code(json.dumps(interface['response_error'], indent=2), 'json')
+    md = MdUtils(file_name="API-DOC", title=data.title, author=data.author)
+    # === 文档头 ===
+    md.new_header(1, data.title)
+    md.new_line(f"> **更新日期**: {datetime.now().strftime('%Y-%m-%d')}")
+    md.new_line(f"> **版本**: {data.version}")
 
-        md.new_line('---')
+    md.new_list([f"- **{url.name}**: `{url.url}`" for url in data.base_url])
+
+    # api 文档
+    _ = [_api_markdown(api, md=md) for api in data.apis]
 
     # === 附录 ===
     md.new_header(2, "附录")
@@ -99,46 +184,7 @@ def generate_full_api_docs(api_spec):
     return md.file_data_text
 
 
-# 示例数据
-api_specs = {
-    "title": "用户服务API文档",
-    "version": "v1.2",
-    "base_url": "https://api.example.com/v1",
-    "global_headers": [
-        {"name": "Authorization", "type": "string", "required": True, "desc": "Bearer Token"},
-        {"name": "X-Request-ID", "type": "string", "required": False, "desc": "请求唯一标识"},
-    ],
-    "error_codes": [{"status": 400, "code": "invalid_params", "message": "参数校验失败"}],
-    "interfaces": [
-        {
-            "name": "创建用户",
-            "method": "post",
-            "path": "/users",
-            "description": "创建新用户账号",
-            "params": [
-                {
-                    "name": "username",
-                    "in": "body",
-                    "type": "string",
-                    "required": True,
-                    "description": "用户名",
-                },
-                {
-                    "name": "email",
-                    "in": "body",
-                    "type": "email",
-                    "required": True,
-                    "description": "邮箱地址",
-                },
-            ],
-            "request_example": {"username": "test_user", "email": "user@example.com"},
-            "response_success": {"code": 201, "data": {"user_id": 123}},
-            "response_error": {"code": 409, "error": "user_exists"},
-        }
-    ],
-}
-
 # 生成文档
-full_docs = generate_full_api_docs(api_specs)
-with open("full_api_doc.md", "w", encoding="utf-8") as f:
+full_docs = generate_markdown('a0fc8bc97d454eb3b5630762fd3fa85b')
+with open("api_doc.md", "w", encoding="utf-8") as f:
     f.write(full_docs)

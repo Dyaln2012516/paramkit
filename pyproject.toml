@@ -40,7 +40,7 @@ where = ["."]
 "paramkit" = ["py.typed", "*.json"]
 
 [project.scripts]
-paramkit-cli = "paramkit.cli:main"
+paramkit = "paramkit.cli:main"
 
 # ========== Code Quality Tools ==========
 

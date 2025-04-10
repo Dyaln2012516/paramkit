@@ -55,10 +55,10 @@ class CollectDocs(threading.Thread):
             path=self.request.path,
             status_code=self.response.status_code,
             client_ip=self.request.META.get("REMOTE_ADDR"),
-            request_headers=json.dumps(dict(self.request.headers)),
-            request_body=self.request.body.decode("utf-8", errors="replace"),
+            request_headers=json.dumps(dict(self.request.headers), indent=2),
+            request_body=json.dumps(self.request.body.decode("utf-8", errors="replace"), indent=2),
             duration=self.duration,
-            api_desc=self.view_func.__doc__,  # type: ignore
+            api_desc=self.view_func.__doc__,
         )
         try:
             record = (

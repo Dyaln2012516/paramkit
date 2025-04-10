@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="../../static/js/marked.min.js"></script>
+    <script src="../../static/js/highlight.min.js"></script>
+    <link rel="stylesheet" href="../../static/css/github.min.css">
+    <link rel="stylesheet" href="../../static/css/github-markdown.min.css">
+    <style>
+        :root {
+            --primary: #3B82F6;
+            --primary-hover: #2563EB;
+            --surface: rgba(255, 255, 255, 0.98);
+            --surface-dark: rgba(17, 24, 39, 0.98);
+            --text-primary: #1E293B;
+            --text-dark: #F1F5F9;
+            --border-light: rgba(226, 232, 240, 0.3);
+            --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 4rem 2rem;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.75;
+            background: radial-gradient(ellipse at 20% 20%, #F8FAFC 0%, #F1F5F9 100%);
+            color: var(--text-primary);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            /* 关键修复：防止父元素影响fixed定位 */
+            transform: none !important;
+            perspective: none !important;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: radial-gradient(ellipse at 20% 20%, #0F172A 0%, #1E293B 100%);
+                color: var(--text-dark);
+            }
+        }
+
+
+        /* 固定下载按钮 */
+        .download-btn {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000; /* 保证最高层级 */
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: #fff;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            /* 关键修复：启用硬件加速 */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+
+        .download-btn:hover {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 8px 12px -2px rgba(59, 130, 246, 0.3);
+        }
+
+        .markdown-body {
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            border-radius: 1.25rem;
+            box-shadow: var(--shadow-xl);
+            margin: 1rem auto;
+            padding: 2rem;
+            max-width: 80ch;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid var(--border-light);
+        }
+
+        .code-content pre {
+            margin: 0 !important;
+            padding: 1.5rem !important;
+            background: rgba(241, 245, 249, 0.95) !important;
+            border-radius: 0 !important;
+        }
+
+
+        @media (max-width: 768px) {
+            body {
+                padding: 3rem 1.5rem;
+            }
+
+            .markdown-body {
+                padding: 2.5rem;
+                margin: 2rem auto;
+                border-radius: 1rem;
+            }
+
+            /* 移动端按钮定位修复 */
+            .download-btn {
+                position: fixed !important;
+                top: 1rem !important;
+                right: 1rem !important;
+                padding: 0.875rem 1.25rem;
+                font-size: 0.9em;
+            }
+        }
+
+        .markdown-body h2 {
+            border-bottom: 0;
+        }
+    </style>
+    <style>
+
+        /* 折叠状态 */
+        .code-container.collapsed {
+            border-color: transparent;
+        }
+
+        .code-container.collapsed .code-content {
+            max-height: 0 !important;
+            padding: 0 !important;
+            overflow: hidden;
+        }
+
+        .code-container.collapsed .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        /* 复制按钮 */
+        .copy-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(203, 213, 225, 0.5);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* 滚动条样式 */
+        .code-content::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .code-content::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.3);
+            border-radius: 4px;
+        }
+
+        /* 暗色模式 */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: radial-gradient(ellipse at 20% 20%, #0F172A 0%, #1E293B 100%);
+                color: var(--text-dark);
+            }
+
+            .code-header {
+                background: rgba(30, 41, 59, 0.9);
+            }
+
+            .code-header:hover {
+                background: rgba(30, 41, 59, 0.8);
+            }
+
+            .code-title {
+                color: #94A3B8;
+            }
+
+            .code-content pre {
+                background: rgba(30, 41, 59, 0.95) !important;
+            }
+
+            .copy-btn {
+                background: rgba(30, 41, 59, 0.9);
+                border-color: rgba(100, 116, 139, 0.3);
+                color: #94A3B8;
+            }
+
+            .code-content::-webkit-scrollbar-thumb {
+                background: rgba(148, 163, 184, 0.3);
+            }
+        }
+
+        /* 代码容器 */
+        .code-container {
+            margin: 2rem 0;
+            border: 1px solid rgba(203, 213, 225, 0.2);
+            border-radius: 1rem;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 代码头部 */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.2rem;
+            background: rgba(241, 245, 249, 0.9);
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .code-header:hover {
+            background: rgba(226, 232, 240, 0.9);
+        }
+
+        /* 代码标题 */
+        .code-title {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #64748B;
+        }
+
+        /* 折叠图标 */
+        .toggle-icon {
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        /* 代码块主体 */
+        .code-content {
+            max-height: 500px;
+            overflow-y: auto;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+            padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+    </style>
+</head>
+<body>
+<button class="download-btn" onclick="window.location.href='/download'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2v15m0 0l-4-4m4 4l4-4m-6 6H5a2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 00-2-2h-7z"/>
+    </svg>
+    Markdown文档
+</button>
+
+<article class="markdown-body" id="content"></article>
+
+<script>
+    // 自动获取代码语言
+    function getCodeLanguage(pre) {
+        const match = pre.querySelector('code').className.match(/language-(\w+)/);
+        return match ? match[1].toUpperCase() : 'CODE';
+    }
+
+    // 初始化代码块
+    function initCodeBlocks() {
+        document.querySelectorAll('pre').forEach(originalPre => {
+            const container = document.createElement('div');
+            container.className = 'code-container';
+
+            // 创建头部
+            const header = document.createElement('div');
+            header.className = 'code-header';
+
+            // 标题部分
+            const title = document.createElement('div');
+            title.className = 'code-title';
+            title.innerHTML = `
+                <span>${getCodeLanguage(originalPre)}</span>
+                <svg class="toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            `;
+
+            // 复制按钮
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M8 4v12h12V4H8zM4 8h16v12H4V8z"/>
+                </svg>
+            `;
+
+            // 代码内容容器
+            const content = document.createElement('div');
+            content.className = 'code-content';
+            content.appendChild(originalPre.cloneNode(true));
+
+            // 组装结构
+            header.appendChild(title);
+            header.appendChild(copyBtn);
+            container.appendChild(header);
+            container.appendChild(content);
+            originalPre.parentNode.replaceChild(container, originalPre);
+
+            // 折叠功能
+            header.addEventListener('click', (e) => {
+                if(e.target === copyBtn) return;
+                container.classList.toggle('collapsed');
+            });
+
+            // 复制功能
+            copyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const code = content.querySelector('code').innerText;
+                navigator.clipboard.writeText(code);
+
+                copyBtn.innerHTML = '✓ 已复制';
+                copyBtn.style.pointerEvents = 'none';
+
+                setTimeout(() => {
+                    copyBtn.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M8 4v12h12V4H8zM4 8h16v12H4V8z"/>
+                        </svg>
+                    `;
+                    copyBtn.style.pointerEvents = 'auto';
+                }, 2000);
+            });
+        });
+    }
+
+    // 页面初始化
+    document.body.style.opacity = 0;
+    document.body.style.transform = 'translateY(40px) scale(0.98)';
+    setTimeout(() => {
+        document.body.style.transition = 'opacity 0.8s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)';
+        document.body.style.opacity = 1;
+        document.body.style.transform = 'translateY(0) scale(1)';
+    }, 100);
+
+    // Markdown配置
+    marked.setOptions({
+        highlight: (code, lang) => {
+            const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+            return hljs.highlight(code, {
+                language,
+                ignoreIllegals: true
+            }).value;
+        }
+    });
+
+    // 渲染内容
+    document.getElementById('content').innerHTML = marked.parse(`<!-- MARKDOWN_CONTENT -->`);
+    hljs.highlightAll();
+    initCodeBlocks();
+</script>
+</body>
+</html>

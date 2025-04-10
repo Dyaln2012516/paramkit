@@ -8,66 +8,41 @@
 @Contact Email: cgq2012516@163.com
 """
 import argparse
-from functools import wraps
-from typing import Any, Callable, Optional
+from http.server import HTTPServer
 
-from paramkit.api.fields import P
+from paramkit.docs.client import MarkdownHandler
 
 
-class CliCommand:
-    """CLI command generation extension"""
+class CustomHelpFormatter(argparse.HelpFormatter):
+    """自定义错误提示和帮助信息"""
 
-    def __init__(self, api_assert):
-        self.api_assert = api_assert
-        self.parser = argparse.ArgumentParser()
-        self._build_parser()
+    def _check_value(self, action, value):
+        if action.choices is not None and value not in action.choices:
+            raise argparse.ArgumentError(action, f"无效命令: '{value}'，可选命令: {', '.join(action.choices)}")
 
-    @staticmethod
-    def convert_type(param_type) -> Callable[[str], Any]:
-        """Type conversion handler"""
-        type_map = {
-            list: lambda x: x.split(","),
-            dict: lambda x: dict(pair.split(":") for pair in x.split(",")),
-            bool: lambda x: x.lower() in ("true", "1", "yes"),
-        }
-        return type_map.get(param_type, param_type)
 
-    def _build_argument(self, param: P):
-        """Build a single command line argument"""
-        arg_name = f"--{param.name.replace('.', '-')}"
-        help_parts = [f"Type: {param.typ.__name__}"]
+def main():
+    parser = argparse.ArgumentParser(
+        prog="paramkit", description="ParamKit 命令行工具", formatter_class=CustomHelpFormatter  # 绑定自定义格式化器
+    )
+    subparsers = parser.add_subparsers(
+        dest="command", required=True, title="可用命令", help="输入子命令以执行操作"  # 强制要求输入子命令
+    )
 
-        # Constraint description
-        if "ge" in param:
-            help_parts.append(f"min={param.ge}")
-        if "le" in param:
-            help_parts.append(f"max={param.le}")
-        # if "opts" in param:
-        #     opts = ", ".join(param.opts)
-        #     help_parts.append(f"options: {opts}")
+    # ===== serve 子命令 =====
+    serve_parser = subparsers.add_parser("serve", help="启动 HTTP 服务")
+    serve_parser.add_argument("-H", "--host", default="0.0.0.0", help="监听地址 (默认: 0.0.0.0)")
+    serve_parser.add_argument("-p", "--port", type=int, default=996, help="监听端口 (默认: 996)")
+    args = parser.parse_args()
 
-        # Argument configuration
-        arg_config = {
-            "type": self.convert_type(param.typ),
-            "help": " | ".join(help_parts),
-            "required": param.required,
-            "default": param.value,
-        }
+    # ===== 命令分发逻辑 =====
+    if args.command == "serve":
+        server = HTTPServer((args.host, args.port), MarkdownHandler)  # noqa
+        print(f"服务已启动: http://{args.host}:{args.port}")
+        server.serve_forever()
+    else:
+        parser.print_help()
 
-        self.parser.add_argument(arg_name, **arg_config)
 
-    def _build_parser(self) -> Optional[None]:
-        """Build the complete argument parser"""
-        for param in self.api_assert.defined_params.values():
-            self._build_argument(param)
-
-    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
-        """Generate CLI execution logic"""
-
-        @wraps(func)
-        def wrapped(*args, **kwargs):  # noqa: W0613
-            cli_args = vars(self.parser.parse_args())
-            validated = self.api_assert(cli_args)  # Reuse validation logic
-            return func(**validated)
-
-        return wrapped
+if __name__ == "__main__":
+    main()
