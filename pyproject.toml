@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "paramkit"
-version = "0.1.0"
+version = "0.2.1"
 authors = [{ name = "Dylan", email = "cgq2012516@gmail.com" }]
 description = "A parameter management toolkit for Python"
 readme = "README.md"

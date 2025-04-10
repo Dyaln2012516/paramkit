@@ -15,7 +15,7 @@ long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf
 
 setup(
     name="paramkit",
-    version="0.1.0",
+    version="0.2.1",
     author="Dylan",
     author_email="cgq2012516@gmail.com",
     description="A parameter management toolkit for Python",

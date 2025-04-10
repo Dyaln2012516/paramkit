@@ -25,19 +25,23 @@ class CollectDocs(threading.Thread):
 
     def __init__(
         self,
+        request_params,
         *,
         request: Union[Request, HttpRequest],
         response: JsonResponse,
         view_func: Callable[..., Any],
         params: Dict[str, P],
         duration: float,
+        api_desc: str = '',
     ):
         super().__init__(daemon=False)
+        self.request_params: Dict[str, Any] = request_params
         self.params: Dict[str, P] = params
         self.request: Union[Request, HttpRequest] = request
         self.response: JsonResponse = response
         self.view_func: Callable[..., Any] = view_func
         self.duration: float = duration
+        self.api_desc: str = api_desc
 
     def run(self):
         self._start()
@@ -49,16 +53,15 @@ class CollectDocs(threading.Thread):
         self.upsert_params(request_uid)
 
     def upsert_record(self) -> str:
-
         new_record = APIRecord(
             method=self.request.method,
             path=self.request.path,
             status_code=self.response.status_code,
             client_ip=self.request.META.get("REMOTE_ADDR"),
-            request_headers=json.dumps(dict(self.request.headers), indent=2),
-            request_body=json.dumps(self.request.body.decode("utf-8", errors="replace"), indent=2),
+            request_headers=json.dumps(dict(self.request.headers), indent=4, ensure_ascii=False),
+            request_body=json.dumps(self.request_params, indent=4, ensure_ascii=False),
             duration=self.duration,
-            api_desc=self.view_func.__doc__,
+            api_desc=self.api_desc or self.view_func.__doc__,
         )
         try:
             record = (

@@ -1,5 +1,3 @@
-# !/usr/bin/env python3
-# _*_ coding:utf-8 _*_
 """
 @File     : client.py
 @Project  : 
@@ -7,18 +5,24 @@
 @Author   : dylan
 @Contact Email: cgq2012516@163.com
 """
+
 import os
 from http.server import BaseHTTPRequestHandler
+from pathlib import Path
 from urllib.parse import urlparse
+
+from paramkit.docs.markdown import generate_markdown
 
 
 class MarkdownHandler(BaseHTTPRequestHandler):
-    PROJECT_ROOT = r"/Users/dylan/Desktop/python-projects/paramkit/paramkit/src/paramkit/docs"  # macOS用户目录适配
-    MD_FILE_PATH = os.path.join(PROJECT_ROOT, "api_doc.md")  # 实际Markdown文件路径
-    STATIC_DIR = os.path.join(PROJECT_ROOT, "static")
+    PROJECT_ROOT = Path(__file__).parent  # Adaptation for macOS user directory
+    STATIC_DIR = PROJECT_ROOT.joinpath("static")
+    DOC_PATH = PROJECT_ROOT.joinpath("api_docs.md")
+
+    DOC_PATH.write_text(generate_markdown(), encoding='utf-8')
 
     def do_GET(self):
-        # 路径路由
+        # Path routing
         if self.path.startswith('/static/'):
             self.handle_static()
         elif self.path == '/':
@@ -29,15 +33,15 @@ class MarkdownHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def handle_static(self):
-        """处理静态资源请求"""
-        path = urlparse(self.path).path  # 安全解析路径
+        """Handle static resource requests"""
+        path = urlparse(self.path).path  # Safely parse the path
         file_path = os.path.join(self.STATIC_DIR, path[len('/static/') :])
 
         if not os.path.isfile(file_path):
             self.send_error(404)
             return
 
-        # 设置MIME类型
+        # Set MIME type
         mime_types = {'.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css'}
         ext = os.path.splitext(file_path)[1]
         content_type = mime_types.get(ext, 'text/plain')
@@ -52,17 +56,16 @@ class MarkdownHandler(BaseHTTPRequestHandler):
             self.send_error(500, f"Error: {str(e)}")
 
     def handle_homepage(self):
-        """渲染Markdown到模板"""
+        """Render Markdown to template"""
         try:
-            # 读取模板
+            # Read the template
             with open(os.path.join(self.STATIC_DIR, 'html/index.html'), 'r', encoding='utf-8') as f:
                 template = f.read()
 
-            # 读取Markdown内容
-            with open(self.MD_FILE_PATH, 'r', encoding='utf-8') as f:
-                md_content = f.read().replace('`', r'\`').replace('\n', r'\n')
-
-            # 替换占位符
+            # Read Markdown content
+            md_content = self.DOC_PATH.read_text(encoding='utf-8')
+            md_content = md_content.replace('`', r'\`').replace('\n', r'\n')
+            # Replace placeholders
             final_html = template.replace('<!-- MARKDOWN_CONTENT -->', md_content)
 
             self.send_response(200)
@@ -75,15 +78,12 @@ class MarkdownHandler(BaseHTTPRequestHandler):
             self.send_error(500, f"Internal Error: {str(e)}")
 
     def handle_download(self):
-        """处理下载请求"""
+        """Handle download requests"""
         try:
-            with open(self.MD_FILE_PATH, 'rb') as f:
-                content = f.read()
-
             self.send_response(200)
             self.send_header('Content-Type', 'text/markdown; charset=utf-8')
             self.send_header('Content-Disposition', 'attachment; filename="document.md"')
             self.end_headers()
-            self.wfile.write(content)
+            self.wfile.write(self.DOC_PATH.read_bytes())
         except Exception as e:  # pylint: disable=W0718
             self.send_error(500, f"Download Failed: {str(e)}")

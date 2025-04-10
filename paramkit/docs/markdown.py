@@ -79,7 +79,9 @@ class Params(BaseTable):
 class ApiData:
     header: Headers
     param: Params
-    name: Optional[str] = None
+    uid: Optional[str] = None
+    description: str = ''
+    duration: Optional[str] = None
     update_at: Optional[str] = None
     path: Optional[str] = None
     method: Optional[str] = None
@@ -100,7 +102,7 @@ class MarkdownData:
     apis: List[ApiData] = field(default_factory=list)
 
 
-def _data_from_db(request_uid: str) -> MarkdownData:
+def _data_from_db(request_uid: str = '') -> MarkdownData:
     data = MarkdownData(
         'API文档',
         'v1.0',
@@ -113,12 +115,14 @@ def _data_from_db(request_uid: str) -> MarkdownData:
     )
     for record in APIRecord.select():
         api = ApiData(
-            name=record.request_uid,
+            uid=record.request_uid,
             update_at=record.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
             path=record.path,
             method=record.method,
-            header=Headers(APIHeaderRecord.select().where(APIHeaderRecord.request_uid == request_uid)),
-            param=Params(APIParamRecord.select().where(APIParamRecord.request_uid == request_uid)),
+            duration=f'{record.duration:.3f}',
+            description=record.api_desc,
+            header=Headers(APIHeaderRecord.select().where(APIHeaderRecord.request_uid == record.request_uid)),
+            param=Params(APIParamRecord.select().where(APIParamRecord.request_uid == record.request_uid)),
             request=record.request_body,
             response=record.response_body,
         )
@@ -127,27 +131,30 @@ def _data_from_db(request_uid: str) -> MarkdownData:
 
 
 def _api_markdown(api: ApiData, md: MdUtils):
-    # === 认证 ===
-    md.new_header(2, "认证方式", add_table_of_contents='n')
-    md.new_line("```http\nAuthorization: Bearer {your_token}\n```")
-
     # === 目录 ===
-    md.new_header(2, "接口信息")
+    md.new_line(f'<a id="{api.uid}"></a>')
+    md.new_header(3, "接口信息", add_table_of_contents='n')
+    md.new_line(f"**接口简介**：`{api.description.strip()}`")
     md.new_line(f"**接口地址**：`{api.path}`")
     md.new_line(f"**请求方法**：`{api.method}`")
+    md.new_line(f"**接口耗时**：`{api.duration}ms`")
     md.new_line(f"**更新时间**：`{api.update_at}`")
 
-    md.new_header(2, "请求头", add_table_of_contents='n')
+    # === 认证 ===
+    md.new_header(3, "认证方式", add_table_of_contents='n')
+    md.new_line("```http\nAuthorization: Bearer {your_token}\n```")
+
+    md.new_header(3, "请求头", add_table_of_contents='n')
     md.new_table(columns=api.header.columns, rows=api.header.rows, text=api.header.text, text_align='left')
 
-    md.new_header(2, "请求参数", add_table_of_contents='n')
+    md.new_header(3, "请求参数", add_table_of_contents='n')
     md.new_table(columns=api.param.columns, rows=api.param.rows, text=api.param.text, text_align='left')
 
     # 示例代码
-    md.new_header(2, "请求示例", add_table_of_contents='n')
+    md.new_header(3, "请求示例", add_table_of_contents='n')
     md.insert_code(api.request, 'json')
 
-    md.new_header(2, "响应示例", add_table_of_contents='n')
+    md.new_header(3, "响应示例", add_table_of_contents='n')
     md.insert_code(api.response, 'json')
 
     # md.new_header(2, "目录")
@@ -162,7 +169,7 @@ def _api_markdown(api: ApiData, md: MdUtils):
     md.new_line('---')
 
 
-def generate_markdown(request_uid: str):
+def generate_markdown(request_uid: str = '') -> str:
     data = _data_from_db(request_uid)
 
     md = MdUtils(file_name="API-DOC", title=data.title, author=data.author)
@@ -170,8 +177,10 @@ def generate_markdown(request_uid: str):
     md.new_header(1, data.title)
     md.new_line(f"> **更新日期**: {datetime.now().strftime('%Y-%m-%d')}")
     md.new_line(f"> **版本**: {data.version}")
-
     md.new_list([f"- **{url.name}**: `{url.url}`" for url in data.base_url])
+
+    md.new_header(2, "接口目录")
+    md.new_list([f"[{api.path}](#{api.uid})" for api in data.apis])
 
     # api 文档
     _ = [_api_markdown(api, md=md) for api in data.apis]
@@ -185,6 +194,6 @@ def generate_markdown(request_uid: str):
 
 
 # 生成文档
-full_docs = generate_markdown('a0fc8bc97d454eb3b5630762fd3fa85b')
+full_docs = generate_markdown()
 with open("api_doc.md", "w", encoding="utf-8") as f:
     f.write(full_docs)

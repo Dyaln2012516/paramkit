@@ -9,12 +9,20 @@
 """
 import time
 from functools import wraps
-from typing import Callable, Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 from paramkit.api.fields import P
 from paramkit.db.core import CollectDocs
 from paramkit.errors import ParamRepeatDefinedError
 from paramkit.utils import flatten_params, web_params
+
+try:
+    from django.conf import settings
+
+    DEBUG = settings.DEBUG
+
+except ImportError:
+    DEBUG = False
 
 
 class ApiAssert:
@@ -22,19 +30,25 @@ class ApiAssert:
     A decorator class for API parameter validation.
     """
 
-    __slots__ = ("defined_params", "enable_docs")
+    __slots__ = ("defined_params", "enable_docs", "api_desc")
 
-    def __init__(self, *params: P, enable_docs: bool = False):
+    def __init__(
+        self,
+        *params: P,
+        enable_docs: bool = False,
+        api_desc: str = '',
+    ):
         """
         Initialize the ApiAssert decorator.
 
         :param params: List of parameter definitions
         :param enable_docs: Flag to enable documentation
-        :param attach: Flag to attach validated data to the request
+        :param api_desc: description of the API
         """
         self.defined_params: Dict[str, P] = {}
         self.__setup__(params)
         self.enable_docs = enable_docs
+        self.api_desc = api_desc
 
     def __call__(self, view_func):
         """
@@ -47,14 +61,22 @@ class ApiAssert:
         @wraps(view_func)
         def _decorate(view_self, request, *view_args, **view_kwargs):
             # Flatten and validate parameters
-            flatten_params(web_params(request, view_kwargs), self.defined_params)
+            request_params = web_params(request, view_kwargs)
+            flatten_params(request_params, self.defined_params)
             self.__validate__()
             start = time.perf_counter()
             rep = view_func(view_self, request, *view_args, **view_kwargs)
             duration = (time.perf_counter() - start) * 1000
-            if self.enable_docs:
+
+            if self.enable_docs or DEBUG:
                 CollectDocs(
-                    request=request, response=rep, view_func=view_func, params=self.defined_params, duration=duration
+                    request_params,
+                    request=request,
+                    response=rep,
+                    view_func=view_func,
+                    params=self.defined_params,
+                    duration=duration,
+                    api_desc=self.api_desc,
                 ).start()
 
             return rep
@@ -82,27 +104,6 @@ class ApiAssert:
         """
         for p in self.defined_params.values():
             p.validate()
-
-    def __generate_docs__(self, view_func: Callable[..., None]) -> Optional[None]:
-        """Generate API documentation (example)"""
-        docs = ["Validated Parameters:"]
-        for name, param in self.defined_params.items():
-            constraints = []
-            if "ge" in param:
-                constraints.append(f"min={param.ge}")
-            if "le" in param:
-                constraints.append(f"max={param.le}")
-            if "opts" in param:
-                constraints.append(f"options={param.opts}")
-
-            docs.append(f"- {name} ({param.typ.__name__}): {', '.join(constraints)}")
-
-        view_func.__doc__ = "\n".join(docs)
-
-    # def cli_command(self, func: Callable[..., None]) -> Callable[..., Any]:
-    #     """Add CLI command support"""
-    #     cli_handler = CliCommand(self)
-    #     return cli_handler(func)
 
 
 apiassert = ApiAssert  # noqa: C0103
