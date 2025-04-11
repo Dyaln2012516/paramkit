@@ -31,7 +31,11 @@ setup(
     python_requires=">=3.8",
     packages=find_packages(where="."),
     package_data={"paramkit": ["py.typed", "*.json"]},
-    install_requires=["typing-extensions>=4.0.0; python_version < '3.8'"],
+    install_requires=[
+        "typing-extensions>=4.0.0; python_version < '3.8'",
+        "peewee >= 3.1.0",
+        "mdutils >=1.5.0",
+    ],
     extras_require={"test": ["pytest>=7.0", "pytest-cov"], "dev": ["black", "flake8", "mypy", "isort", "pylint", "pycln"]},
     classifiers=[
         "Development Status :: 3 - Alpha",

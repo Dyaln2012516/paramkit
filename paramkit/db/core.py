@@ -53,10 +53,11 @@ class CollectDocs(threading.Thread):
         self.upsert_params(request_uid)
 
     def upsert_record(self) -> str:
+        status_code = self.response.status_code if hasattr(self.response, 'status_code') else 200
         new_record = APIRecord(
             method=self.request.method,
             path=self.request.path,
-            status_code=self.response.status_code,
+            status_code=status_code,
             client_ip=self.request.META.get("REMOTE_ADDR"),
             request_headers=json.dumps(dict(self.request.headers), indent=4, ensure_ascii=False),
             request_body=json.dumps(self.request_params, indent=4, ensure_ascii=False),

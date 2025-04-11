@@ -7,6 +7,7 @@
 """
 
 import os
+import threading
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,9 +18,8 @@ from paramkit.docs.markdown import generate_markdown
 class MarkdownHandler(BaseHTTPRequestHandler):
     PROJECT_ROOT = Path(__file__).parent  # Adaptation for macOS user directory
     STATIC_DIR = PROJECT_ROOT.joinpath("static")
-    DOC_PATH = PROJECT_ROOT.joinpath("api_docs.md")
-
-    DOC_PATH.write_text(generate_markdown(), encoding='utf-8')
+    DOC_PATH = PROJECT_ROOT.joinpath("api.md")
+    _lock = threading.Lock()
 
     def do_GET(self):
         # Path routing
@@ -59,11 +59,12 @@ class MarkdownHandler(BaseHTTPRequestHandler):
         """Render Markdown to template"""
         try:
             # Read the template
-            with open(os.path.join(self.STATIC_DIR, 'html/index.html'), 'r', encoding='utf-8') as f:
-                template = f.read()
+            template = self.STATIC_DIR.joinpath('html', 'index.html').read_text(encoding='utf-8')
 
+            md_content = generate_markdown()
+            with self._lock:
+                self.DOC_PATH.write_text(md_content, encoding='utf-8')
             # Read Markdown content
-            md_content = self.DOC_PATH.read_text(encoding='utf-8')
             md_content = md_content.replace('`', r'\`').replace('\n', r'\n')
             # Replace placeholders
             final_html = template.replace('<!-- MARKDOWN_CONTENT -->', md_content)
@@ -84,6 +85,7 @@ class MarkdownHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'text/markdown; charset=utf-8')
             self.send_header('Content-Disposition', 'attachment; filename="document.md"')
             self.end_headers()
-            self.wfile.write(self.DOC_PATH.read_bytes())
+            with self._lock:
+                self.wfile.write(self.DOC_PATH.read_bytes())
         except Exception as e:  # pylint: disable=W0718
             self.send_error(500, f"Download Failed: {str(e)}")

@@ -37,7 +37,7 @@ def main():
 
     # ===== serve subcommand =====
     serve_parser = subparsers.add_parser("serve", help="Start HTTP service")
-    serve_parser.add_argument("-H", "--host", default="0.0.0.0", help="Listening address (default: 0.0.0.0)")
+    serve_parser.add_argument("-H", "--host", default="localhost", help="Listening address (default: localhost)")
     serve_parser.add_argument("-p", "--port", type=int, default=996, help="Listening port (default: 996)")
     args = parser.parse_args()
 

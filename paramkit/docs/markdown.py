@@ -91,6 +91,7 @@ class ApiData:
     def __post_init__(self):
         self.request = self.request or ''
         self.response = self.response or ''
+        self.description = self.description or ''
 
 
 @dataclass

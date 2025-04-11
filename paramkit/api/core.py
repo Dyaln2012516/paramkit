@@ -65,9 +65,13 @@ class ApiAssert:
             flatten_params(request_params, self.defined_params)
             self.__validate__()
             start = time.perf_counter()
-            rep = view_func(view_self, request, *view_args, **view_kwargs)
-            duration = (time.perf_counter() - start) * 1000
+            try:
+                rep = view_func(view_self, request, *view_args, **view_kwargs)
+            except Exception as e:  # pylint: disable=bare-except
+                # Handle exceptions and log them if needed
+                raise e
 
+            duration = (time.perf_counter() - start) * 1000
             if self.enable_docs or DEBUG:
                 CollectDocs(
                     request_params,
