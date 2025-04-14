@@ -40,7 +40,7 @@ Issues = "https://github.com/Dyaln2012516/paramkit/issues"
 where = ["."]
 
 [tool.setuptools.package-data]
-"paramkit" = ["py.typed", "*.json"]
+"paramkit" = ["docs/static/css/*.css", "docs/static/js/*.js", "docs/static/*.html"]
 
 [project.scripts]
 paramkit = "paramkit.cli:main"

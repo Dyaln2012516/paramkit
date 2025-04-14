@@ -30,7 +30,8 @@ setup(
     },
     python_requires=">=3.8",
     packages=find_packages(where="."),
-    package_data={"paramkit": ["py.typed", "*.json"]},
+    include_package_data=True,
+    package_data={"paramkit": ["docs/static/css/*.css", "docs/static/js/*.js", "docs/static/*.html"]},
     install_requires=[
         "typing-extensions>=4.0.0; python_version < '3.8'",
         "peewee >= 3.1.0",
