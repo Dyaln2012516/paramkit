@@ -67,7 +67,7 @@ class Params(BaseTable):
                 [
                     param.param_name,
                     param.param_type,
-                    '✅' if param.is_required else '❌',
+                    '✅' if param.is_required == 'True' else '❌',
                     param.param_desc or '-',
                     param.param_demo or '-',
                 ]
@@ -192,9 +192,3 @@ def generate_markdown(request_uid: str = '') -> str:
     md.new_list(["认证用户：1000次请求/小时", "匿名用户：100次请求/小时"])
 
     return md.file_data_text
-
-
-# 生成文档
-full_docs = generate_markdown()
-with open("api_doc.md", "w", encoding="utf-8") as f:
-    f.write(full_docs)

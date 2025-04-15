@@ -61,6 +61,7 @@ class CollectDocs(threading.Thread):
             client_ip=self.request.META.get("REMOTE_ADDR"),
             request_headers=json.dumps(dict(self.request.headers), indent=4, ensure_ascii=False),
             request_body=json.dumps(self.request_params, indent=4, ensure_ascii=False),
+            # response_body=json.dumps(self.response.data, indent=4, ensure_ascii=False),
             duration=self.duration,
             api_desc=self.api_desc or self.view_func.__doc__,
         )
@@ -99,14 +100,19 @@ class CollectDocs(threading.Thread):
 
         params: List[APIParamRecord] = []
         for p in self.params.values():
+            completed_desc = f'取值范围:{str(p.opts)}' if p.opts else None
+
+            if p.desc:
+                completed_desc = f'{completed_desc}, {p.desc}' if completed_desc else p.desc
+
             param = APIParamRecord(
                 request_uid=request_uid,
                 param_name=p.name,
                 param_type=p.typ.__name__,
                 param_value=p.value,
                 is_required=p.required,
-                param_desc=p.desc,
-                param_demo=str(p.opts) if p.opts else None,
+                param_desc=completed_desc,
+                param_demo=p.value,
             )
             params.append(param)
         APIParamRecord.bulk_create(params)

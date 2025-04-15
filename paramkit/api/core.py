@@ -8,6 +8,7 @@
 @Contact Email: cgq2012516@gmail.com
 """
 import time
+from copy import deepcopy
 from functools import wraps
 from typing import Dict, Tuple
 
@@ -62,8 +63,9 @@ class ApiAssert:
         def _decorate(view_self, request, *view_args, **view_kwargs):
             # Flatten and validate parameters
             request_params = web_params(request, view_kwargs)
-            flatten_params(request_params, self.defined_params)
-            self.__validate__()
+            params_bak = deepcopy(self.defined_params)
+            flatten_params(request_params, params_bak)
+            self.__validate__(params_bak)
             start = time.perf_counter()
             try:
                 rep = view_func(view_self, request, *view_args, **view_kwargs)
@@ -100,13 +102,14 @@ class ApiAssert:
                 raise ParamRepeatDefinedError(param_name)
             self.defined_params[param_name] = p
 
-    def __validate__(self) -> None:
+    @staticmethod
+    def __validate__(params: dict[str, P]) -> None:
         """
         Validate all defined parameters.
 
         :return: Empty string after validation
         """
-        for p in self.defined_params.values():
+        for p in params.values():
             p.validate()
 
 
