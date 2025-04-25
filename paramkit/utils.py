@@ -16,6 +16,10 @@ from rest_framework.request import Request
 from paramkit.api.fields import P
 
 
+def content_type_equal(ct: str, *cts: str) -> bool:
+    return any(c.startswith(ct) for c in cts)
+
+
 def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Retrieve all request parameters in a unified manner.
@@ -40,7 +44,7 @@ def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = Non
     if request.method in ["POST", "PUT", "PATCH", "DELETE"]:
         content_type = request.content_type
         # Native Django handling logic
-        if content_type == "application/json":
+        if content_type_equal(content_type, "application/json"):
             # DRF has already parsed the data into request.data
             if isinstance(request, Request):
                 params.update(request.data)
@@ -49,7 +53,8 @@ def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = Non
                     params.update(json.loads(request.body))
                 except json.JSONDecodeError:
                     pass
-        elif content_type in (
+        elif content_type_equal(
+            content_type,
             "application/x-www-form-urlencoded",
             "multipart/form-data",
         ):
