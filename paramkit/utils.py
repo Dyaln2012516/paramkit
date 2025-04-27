@@ -16,8 +16,8 @@ from rest_framework.request import Request
 from paramkit.api.fields import P
 
 
-def content_type_equal(ct: str, *cts: str) -> bool:
-    return any(c.startswith(ct) for c in cts)
+def content_type_in(ct: str, *cts: str) -> bool:
+    return any(ct.startswith(c) for c in cts)
 
 
 def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -31,6 +31,9 @@ def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = Non
     :return: Merged parameter dictionary
     """
     params = {}
+    # Merge path parameters
+    if view_kwargs:
+        params.update(view_kwargs)
 
     # Handle query parameters
     if isinstance(request, Request):
@@ -44,7 +47,7 @@ def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = Non
     if request.method in ["POST", "PUT", "PATCH", "DELETE"]:
         content_type = request.content_type
         # Native Django handling logic
-        if content_type_equal(content_type, "application/json"):
+        if content_type_in(content_type, "application/json"):
             # DRF has already parsed the data into request.data
             if isinstance(request, Request):
                 params.update(request.data)
@@ -53,18 +56,14 @@ def web_params(request: HttpRequest, view_kwargs: Optional[Dict[str, Any]] = Non
                     params.update(json.loads(request.body))
                 except json.JSONDecodeError:
                     pass
-        elif content_type_equal(
+        elif content_type_in(
             content_type,
             "application/x-www-form-urlencoded",
             "multipart/form-data",
         ):
             params.update({key: values if len(values) > 1 else values[0] for key, values in request.POST.lists()})
             # Handle file uploads
-            params.update({name: request.FILES.getlist(name) for name in request.FILES})
-
-    # Merge path parameters
-    if view_kwargs:
-        params.update(view_kwargs)
+            # params.update({name: request.FILES.getlist(name) for name in request.FILES})
 
     return params
 
