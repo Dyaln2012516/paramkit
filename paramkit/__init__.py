@@ -7,4 +7,4 @@
 @Author   : dylan
 @Contact Email: cgq2012516@gmail.com
 """
-__version__ = '0.2.6'
+__version__ = '0.2.7'

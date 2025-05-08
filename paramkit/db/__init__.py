@@ -7,9 +7,11 @@
 @Author   : dylan
 @Contact Email: cgq2012516@163.com
 """
+import getpass
 import os
+from datetime import datetime
 
-from peewee import AutoField, Model
+from peewee import SQL, AutoField, CharField, DateTimeField, Model
 from playhouse.pool import PooledSqliteDatabase
 
 # 获取项目根目录的绝对路径
@@ -34,6 +36,21 @@ db = PooledSqliteDatabase(
 
 class BaseModel(Model):  # type: ignore
     id = AutoField(primary_key=True)
+    # 新增字段
+    updated_at = DateTimeField(
+        default=datetime.now, constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')], formats='%Y-%m-%d %H:%M:%S'  # SQLite 需要这个约束
+    )
+    updated_by = CharField(
+        max_length=32,
+        default=getpass.getuser,
+        help_text="operator",
+    )
+
+    def save(self, *args, **kwargs):
+        # 在保存前自动更新 updated_at
+        if self.id:  # 如果是更新操作
+            self.updated_at = datetime.now()
+        return super().save(*args, **kwargs)
 
     class Meta:
         database = db

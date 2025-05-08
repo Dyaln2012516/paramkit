@@ -9,6 +9,7 @@
 """
 import json
 import threading
+from dataclasses import asdict
 from typing import Any, Callable, Dict, List, Union
 
 from django.http import HttpRequest, JsonResponse
@@ -18,6 +19,7 @@ from rest_framework.request import Request
 from paramkit.api.fields import P
 from paramkit.db import db
 from paramkit.db.model import APIHeaderRecord, APIParamRecord, APIRecord
+from paramkit.docs.markdown import ApiData, Headers, Params
 
 
 class CollectDocs(threading.Thread):
@@ -116,3 +118,26 @@ class CollectDocs(threading.Thread):
             )
             params.append(param)
         APIParamRecord.bulk_create(params)
+
+
+def query_api():
+    """获取所有的api接口"""
+
+    items = []
+    for record in APIRecord.select():
+        api = ApiData(
+            id=record.id,
+            uid=record.request_uid,
+            update_at=record.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            update_by=record.update_by,
+            endpoint=record.path,
+            method=record.method,
+            duration=f'{record.duration:.3f}',
+            desc=record.api_desc,
+            header=Headers(APIHeaderRecord.select().where(APIHeaderRecord.request_uid == record.request_uid)),
+            param=Params(APIParamRecord.select().where(APIParamRecord.request_uid == record.request_uid)),
+            request=record.request_body,
+            response=record.response_body,
+        )
+        items.append(asdict(api))
+    return items

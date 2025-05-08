@@ -26,7 +26,7 @@ def generate_postman_collection(api_data, collection_name):
                     "host": ["{{base_url}}"],
                     "path": details["path"].strip("/").split("/"),
                 },
-                "description": details.get("description", ""),
+                "desc": details.get("desc", ""),
             },
             "response": [],
         }
@@ -37,7 +37,7 @@ def generate_postman_collection(api_data, collection_name):
                 {
                     "key": param["name"],
                     "value": param.get("example", ""),
-                    "description": param.get("description", ""),
+                    "desc": param.get("desc", ""),
                 }
                 for param in details["params"]
                 if param["in"] == "query"
@@ -60,7 +60,7 @@ def generate_postman_collection(api_data, collection_name):
             "name": collection_name,
             "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
             "_postman_id": "{{generated_id}}",
-            "description": "Auto-generated API collection",
+            "desc": "Auto-generated API collection",
             "updatedAt": datetime.now().isoformat(),
         },
         "item": items,

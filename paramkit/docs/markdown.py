@@ -80,10 +80,12 @@ class ApiData:
     header: Headers
     param: Params
     uid: Optional[str] = None
-    description: str = ''
+    id: Optional[int] = None
+    desc: str = ''
     duration: Optional[str] = None
     update_at: Optional[str] = None
-    path: Optional[str] = None
+    update_by: Optional[str] = None
+    endpoint: Optional[str] = None
     method: Optional[str] = None
     request: Optional[str] = ''
     response: Optional[str] = ''
@@ -91,7 +93,7 @@ class ApiData:
     def __post_init__(self):
         self.request = self.request or ''
         self.response = self.response or ''
-        self.description = self.description or ''
+        self.desc = self.desc or ''
 
 
 @dataclass
@@ -116,12 +118,14 @@ def _data_from_db(request_uid: str = '') -> MarkdownData:
     )
     for record in APIRecord.select():
         api = ApiData(
+            id=record.id,
             uid=record.request_uid,
             update_at=record.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-            path=record.path,
+            update_by=record.update_by,
+            endpoint=record.path,
             method=record.method,
             duration=f'{record.duration:.3f}',
-            description=record.api_desc,
+            desc=record.api_desc,
             header=Headers(APIHeaderRecord.select().where(APIHeaderRecord.request_uid == record.request_uid)),
             param=Params(APIParamRecord.select().where(APIParamRecord.request_uid == record.request_uid)),
             request=record.request_body,
@@ -135,8 +139,8 @@ def _api_markdown(api: ApiData, md: MdUtils):
     # === 目录 ===
     md.new_line(f'<a id="{api.uid}"></a>')
     md.new_header(3, "接口信息", add_table_of_contents='n')
-    md.new_line(f"**接口简介**：`{api.description.strip()}`")
-    md.new_line(f"**接口地址**：`{api.path}`")
+    md.new_line(f"**接口简介**：`{api.desc.strip()}`")
+    md.new_line(f"**接口地址**：`{api.endpoint}`")
     md.new_line(f"**请求方法**：`{api.method}`")
     md.new_line(f"**接口耗时**：`{api.duration}ms`")
     md.new_line(f"**更新时间**：`{api.update_at}`")
@@ -181,7 +185,7 @@ def generate_markdown(request_uid: str = '') -> str:
     md.new_list([f"- **{url.name}**: `{url.url}`" for url in data.base_url])
 
     md.new_header(2, "接口目录")
-    md.new_list([f"[{api.path}](#{api.uid})" for api in data.apis])
+    md.new_list([f"[{api.endpoint}](#{api.uid})" for api in data.apis])
 
     # api 文档
     _ = [_api_markdown(api, md=md) for api in data.apis]
