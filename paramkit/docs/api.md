@@ -1,7 +1,7 @@
 
 # API文档
   
-> **更新日期**: 2025-05-08  
+> **更新日期**: 2025-05-09  
 > **版本**: v1.0
 - **开发环境domain**: `https://api.example.com/dev/v1`
 - **测试环境domain**: `https://api.example.com/stg/v1`
